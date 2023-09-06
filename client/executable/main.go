@@ -16,10 +16,10 @@ func main() {
 	}
 	ip := os.Args[1]
 
-	client, err := client.CreateClient(ip, constants.SERVER_PORT)
+	client, err := client.CreateClient(ip, constants.SERVER_PORT, network.GetLocalIP())
 	if err != nil {
 		log.Fatalf("Could not start client : %v", err)
 	}
-	client.StartClient(network.GetLocalIP(), constants.CLIENT_PORT)
-
+	client.StartClient(constants.CLIENT_PORT)
+	client.SendFromStdIn()
 }

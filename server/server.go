@@ -15,6 +15,10 @@ type Server struct {
 	lock              *sync.Mutex
 }
 
+func (srv *Server) DumpMessagesReceived() []network.Message {
+	return srv.messagesReceived
+}
+
 func (srv *Server) getMaxClockValueSeen() int {
 	return srv.maxClockValueSeen
 }
@@ -36,12 +40,11 @@ func (srv *Server) PingClient(ip string, clock int) {
 		WallClock:       time.Now(),
 		SenderIpAddress: "",
 	}
-	conn.SendMessage(msg)
+	conn.SendMessage(&msg)
 }
 
-func CreateNewServer() (Server, error) {
+func CreateNewServer(ip string) (Server, error) {
 	srv := Server{}
-	ip := network.GetLocalIP()
 	newMessages, err := network.StartListening(ip, constants.SERVER_PORT)
 	if err != nil {
 		log.Printf("Error starting server: %s", err.Error())
@@ -60,7 +63,7 @@ func (srv *Server) ProcessMessages() {
 	for {
 		message := <-srv.incomingMessages
 		srv.updateMaxClockValueSeen(message.LamportClock)
-		log.Printf("Received message!")
+		log.Printf("Received message: %v", message)
 		go srv.PingClient(message.SenderIpAddress, srv.getMaxClockValueSeen())
 		srv.messagesReceived = append(srv.messagesReceived, message)
 	}

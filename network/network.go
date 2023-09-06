@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type ClientConnection struct {
+type Connection struct {
 	address string
 }
 
@@ -21,13 +21,13 @@ type Message struct {
 	SenderIpAddress string
 }
 
-func CreateConnection(ip string, port string) (ClientConnection, error) {
-	connection := ClientConnection{}
+func CreateConnection(ip string, port string) (Connection, error) {
+	connection := Connection{}
 	connection.address = fmt.Sprintf("%s:%s", ip, port)
 	return connection, nil
 }
 
-func (connection *ClientConnection) SendMessage(message Message) error {
+func (connection *Connection) SendMessage(message *Message) error {
 	log.Printf("Starting Send Message: %v", message)
 	conn, err := net.Dial("tcp", connection.address)
 	if err != nil {
