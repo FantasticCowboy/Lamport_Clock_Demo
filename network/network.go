@@ -15,9 +15,10 @@ type ClientConnection struct {
 }
 
 type Message struct {
-	Msg          string
-	LamportClock int
-	WallClock    time.Time
+	Msg             string
+	LamportClock    int
+	WallClock       time.Time
+	SenderIpAddress string
 }
 
 func CreateConnection(ip string, port string) (ClientConnection, error) {
@@ -28,18 +29,20 @@ func CreateConnection(ip string, port string) (ClientConnection, error) {
 
 func (connection *ClientConnection) SendMessage(message string) error {
 	log.Printf("Starting Send Message: %s", message)
-
 	conn, err := net.Dial("tcp", connection.address)
-	defer conn.Close()
 	if err != nil {
 		log.Printf("Could not setup connection correctly: %s", err.Error())
 		return err
 	}
+	defer conn.Close()
+
 	msg := Message{
-		Msg:          message,
-		LamportClock: 0, // TODO: make a functioning lamport clock
-		WallClock:    time.Now(),
+		Msg:             message,
+		LamportClock:    0, // TODO: make a functioning lamport clock
+		WallClock:       time.Now(),
+		SenderIpAddress: GetLocalIP(),
 	}
+
 	err = gob.NewEncoder(conn).Encode(msg)
 	if err != nil {
 		log.Printf("Could not encode correctly: %s", err.Error())
@@ -83,8 +86,8 @@ func handleNewConnection(conn net.Conn, output chan Message) {
 	output <- msg
 }
 
-func StartListening(port string) (chan Message, error) {
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+func StartListening(ip string, port string) (chan Message, error) {
+	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%s", ip, port))
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +102,18 @@ func StartListening(port string) (chan Message, error) {
 			go handleNewConnection(conn, newMessages)
 		}
 	}()
-	log.Printf("Starting to listen at %s", port)
+	log.Printf("Starting to listen at %s:%s", ip, port)
 	return newMessages, nil
+}
+
+func GetLocalIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddress := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddress.IP.String()
 }

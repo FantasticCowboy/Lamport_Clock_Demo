@@ -3,7 +3,7 @@ package network
 import "testing"
 
 func TestBasic(t *testing.T) {
-	newMessages, err := StartListening("8080")
+	newMessages, err := StartListening("", "8080")
 	if err != nil {
 		t.Errorf("Did not start listening correctly: %d", err)
 	}
