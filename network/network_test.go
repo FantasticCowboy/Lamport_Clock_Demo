@@ -11,7 +11,7 @@ func TestBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf("Did not establish a connection to the server successfully : %d", err)
 	}
-	connection.SendMessage("Hello!")
+	connection.SendMessage(Message{Msg: "hello!"})
 	msg := <-newMessages
 
 	if msg.Msg != "Hello!" {

@@ -27,28 +27,20 @@ func CreateConnection(ip string, port string) (ClientConnection, error) {
 	return connection, nil
 }
 
-func (connection *ClientConnection) SendMessage(message string) error {
-	log.Printf("Starting Send Message: %s", message)
+func (connection *ClientConnection) SendMessage(message Message) error {
+	log.Printf("Starting Send Message: %v", message)
 	conn, err := net.Dial("tcp", connection.address)
 	if err != nil {
 		log.Printf("Could not setup connection correctly: %s", err.Error())
 		return err
 	}
 	defer conn.Close()
-
-	msg := Message{
-		Msg:             message,
-		LamportClock:    0, // TODO: make a functioning lamport clock
-		WallClock:       time.Now(),
-		SenderIpAddress: GetLocalIP(),
-	}
-
-	err = gob.NewEncoder(conn).Encode(msg)
+	err = gob.NewEncoder(conn).Encode(message)
 	if err != nil {
 		log.Printf("Could not encode correctly: %s", err.Error())
 		return err
 	}
-	log.Printf("Ending Send Message: %s", message)
+	log.Printf("Ending Send Message: %v", message)
 	return nil
 }
 
@@ -95,10 +87,11 @@ func StartListening(ip string, port string) (chan Message, error) {
 	go func() {
 		for {
 			conn, err := ln.Accept()
-			log.Printf("Received new connection!")
 			if err != nil {
+				log.Printf("Error: %v", err)
 				continue
 			}
+			log.Printf("Received new connection!")
 			go handleNewConnection(conn, newMessages)
 		}
 	}()
