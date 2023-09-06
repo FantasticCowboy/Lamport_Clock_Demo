@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func CreateConnection(ip string, port string) (Connection, error) {
 }
 
 func (connection *Connection) SendMessage(message *Message) error {
-	log.Printf("Starting Send Message: %v", message)
+	log.Printf("Starting Send Message: %v to %v", message, connection.address)
 	conn, err := net.Dial("tcp", connection.address)
 	if err != nil {
 		log.Printf("Could not setup connection correctly: %s", err.Error())
@@ -69,6 +70,7 @@ func handleNewConnection(conn net.Conn, output chan Message) {
 
 	msg := Message{}
 	err := gob.NewDecoder(bytes.NewBuffer(bytesReceived)).Decode(&msg)
+	msg.SenderIpAddress = strings.Split(conn.RemoteAddr().String(), ":")[0]
 
 	if err != nil {
 		log.Printf("Could not decode message: %s", err.Error())
@@ -97,16 +99,4 @@ func StartListening(ip string, port string) (chan Message, error) {
 	}()
 	log.Printf("Starting to listen at %s:%s", ip, port)
 	return newMessages, nil
-}
-
-func GetLocalIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddress := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddress.IP.String()
 }

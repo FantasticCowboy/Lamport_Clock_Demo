@@ -3,7 +3,6 @@ package main
 import (
 	"lamport_demo/client"
 	"lamport_demo/constants"
-	"lamport_demo/network"
 
 	"log"
 	"os"
@@ -11,12 +10,13 @@ import (
 
 func main() {
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 3 {
 		log.Fatalf("Did not pass in an ip address!")
 	}
-	ip := os.Args[1]
+	serverIp := os.Args[1]
+	clientIp := os.Args[2]
 
-	client, err := client.CreateClient(ip, constants.SERVER_PORT, network.GetLocalIP())
+	client, err := client.CreateClient(serverIp, constants.SERVER_PORT, clientIp)
 	if err != nil {
 		log.Fatalf("Could not start client : %v", err)
 	}
