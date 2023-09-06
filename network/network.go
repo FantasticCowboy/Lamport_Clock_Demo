@@ -1,7 +1,6 @@
 package network
 
 import (
-	"bytes"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -42,6 +41,7 @@ func (connection *Connection) SendMessage(message *Message) error {
 		return err
 	}
 	log.Printf("Ending Send Message: %v", message)
+
 	return nil
 }
 
@@ -63,19 +63,23 @@ func readBytesFromConnection(conn net.Conn) []byte {
 }
 
 func handleNewConnection(conn net.Conn, output chan Message) {
-	bytesReceived := readBytesFromConnection(conn)
-	if bytesReceived == nil {
-		return
-	}
+	//bytesReceived := readBytesFromConnection(conn)
+	//if bytesReceived == nil {
+	//	return
+	//}
+	//if len(bytesReceived) == 0 {
+	//	log.Printf("Received no bytes")
+	//	return
+	//}
 
 	msg := Message{}
-	err := gob.NewDecoder(bytes.NewBuffer(bytesReceived)).Decode(&msg)
-	msg.SenderIpAddress = strings.Split(conn.RemoteAddr().String(), ":")[0]
+	err := gob.NewDecoder(conn).Decode(&msg)
 
 	if err != nil {
 		log.Printf("Could not decode message: %s", err.Error())
 		return
 	}
+	msg.SenderIpAddress = strings.Split(conn.RemoteAddr().String(), ":")[0]
 
 	output <- msg
 }
