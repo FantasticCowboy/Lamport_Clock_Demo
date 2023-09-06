@@ -37,7 +37,7 @@ func (connection *ClientConnection) SendMessage(message string) error {
 	}
 	msg := Message{
 		Msg:          message,
-		LamportClock: 0,
+		LamportClock: 0, // TODO: make a functioning lamport clock
 		WallClock:    time.Now(),
 	}
 	err = gob.NewEncoder(conn).Encode(msg)
