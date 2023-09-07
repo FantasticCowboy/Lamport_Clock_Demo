@@ -1,10 +1,15 @@
 package server
 
 import (
+	"fmt"
 	"lamport_demo/constants"
 	"lamport_demo/network"
 	"log"
+	"os"
+	"os/signal"
+	"sort"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -43,19 +48,58 @@ func (srv *Server) PingClient(ip string, clock int) {
 	conn.SendMessage(&msg)
 }
 
-func CreateNewServer(ip string) (Server, error) {
+func CreateNewServer(ip string) (*Server, error) {
 	srv := Server{}
 	newMessages, err := network.StartListening(ip, constants.SERVER_PORT)
 	if err != nil {
 		log.Printf("Error starting server: %s", err.Error())
-		return srv, err
+		return nil, err
 	}
 	srv.maxClockValueSeen = 0
 	srv.incomingMessages = newMessages
 	srv.messagesReceived = make([]network.Message, 0)
 	srv.lock = new(sync.Mutex)
 	log.Printf("Server created at %s:%s", ip, constants.SERVER_PORT)
-	return srv, err
+
+	programDone := make(chan os.Signal, 1)
+	signal.Notify(programDone, syscall.SIGTERM, syscall.SIGINT)
+
+	go func(srv *Server) {
+		<-programDone
+		srv.lock.Lock()
+		defer srv.lock.Unlock()
+		sort.Slice(srv.messagesReceived,
+			func(i, j int) bool {
+				return (srv.messagesReceived[i].LamportClock < srv.messagesReceived[j].LamportClock ||
+					(srv.messagesReceived[i].LamportClock == srv.messagesReceived[j].LamportClock &&
+						srv.messagesReceived[i].SenderId < srv.messagesReceived[j].SenderId))
+			})
+		f, err := os.Create("./sorted_by_lamport_clock.txt")
+		if err != nil {
+			log.Fatalf("Couldn't open file!")
+		}
+		for _, val := range srv.messagesReceived {
+			f.WriteString(fmt.Sprintf("%d,%s", val.SenderId, val.Msg))
+		}
+		f.Close()
+
+		sort.Slice(srv.messagesReceived,
+			func(i, j int) bool {
+				return (srv.messagesReceived[i].WallClock.Before(srv.messagesReceived[j].WallClock))
+			})
+
+		f, err = os.Create("./sorted_by_timestamp.txt")
+		if err != nil {
+			log.Fatalf("Couldn't open file!")
+		}
+		for _, val := range srv.messagesReceived {
+			f.WriteString(fmt.Sprintf("%d,%s", val.SenderId, val.Msg))
+		}
+		f.Close()
+		os.Exit(0)
+	}(&srv)
+
+	return &srv, err
 }
 
 func (srv *Server) ProcessMessages() {
@@ -65,6 +109,8 @@ func (srv *Server) ProcessMessages() {
 		srv.updateMaxClockValueSeen(message.LamportClock)
 		log.Printf("Received message: %v", message)
 		go srv.PingClient(message.SenderIpAddress, srv.getMaxClockValueSeen())
+		srv.lock.Lock()
 		srv.messagesReceived = append(srv.messagesReceived, message)
+		srv.lock.Unlock()
 	}
 }

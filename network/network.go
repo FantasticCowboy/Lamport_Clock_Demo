@@ -19,6 +19,7 @@ type Message struct {
 	LamportClock    int
 	WallClock       time.Time
 	SenderIpAddress string
+	SenderId        int
 }
 
 func CreateConnection(ip string, port string) (Connection, error) {

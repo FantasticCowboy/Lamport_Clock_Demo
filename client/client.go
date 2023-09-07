@@ -15,6 +15,7 @@ type Client struct {
 	lock         *sync.Mutex
 	connection   network.Connection
 	ip           string
+	id           int
 }
 
 func (client *Client) getClockValueAndIncrement() int {
