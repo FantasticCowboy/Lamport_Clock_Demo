@@ -78,8 +78,10 @@ func CreateNewServer(ip string) (*Server, error) {
 		if err != nil {
 			log.Fatalf("Couldn't open file!")
 		}
+
+		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message"))
 		for _, val := range srv.messagesReceived {
-			f.WriteString(fmt.Sprintf("%d,%s", val.SenderId, val.Msg))
+			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Msg))
 		}
 		f.Close()
 
@@ -92,8 +94,9 @@ func CreateNewServer(ip string) (*Server, error) {
 		if err != nil {
 			log.Fatalf("Couldn't open file!")
 		}
+		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message"))
 		for _, val := range srv.messagesReceived {
-			f.WriteString(fmt.Sprintf("%d,%s", val.SenderId, val.Msg))
+			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Msg))
 		}
 		f.Close()
 		os.Exit(0)
