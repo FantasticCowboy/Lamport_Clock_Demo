@@ -32,6 +32,7 @@ func (srv *Server) updateMaxClockValueSeen(val int) {
 	if srv.maxClockValueSeen < val {
 		srv.maxClockValueSeen = val
 	}
+	srv.maxClockValueSeen++
 }
 
 func (srv *Server) PingClient(ip string, clock int) {
@@ -40,10 +41,8 @@ func (srv *Server) PingClient(ip string, clock int) {
 		return
 	}
 	msg := network.Message{
-		Text:            "",
-		LamportClock:    clock,
-		WallClock:       time.Now(),
-		SenderIpAddress: "",
+		Text:      "",
+		WallClock: time.Now(),
 	}
 	conn.SendMessage(&msg)
 }
@@ -67,13 +66,14 @@ func CreateNewServer(ip string) (*Server, error) {
 func (srv *Server) ProcessMessages() {
 	log.Printf("Server processing messages")
 	for {
+		log.Printf("Waiting for a message")
 		message := <-srv.incomingMessages
 		srv.lock.Lock()
-		defer srv.lock.Unlock()
-		srv.updateMaxClockValueSeen(message.LamportClock)
+		message.LogicalClock = srv.maxClockValueSeen
+		srv.updateMaxClockValueSeen(0)
 		log.Printf("Received message: %+v", message)
-		go srv.PingClient(message.SenderIpAddress, srv.getMaxClockValueSeen())
 		srv.messagesReceived = append(srv.messagesReceived, message)
+		srv.lock.Unlock()
 	}
 }
 
@@ -86,7 +86,7 @@ func (srv *Server) registerTeardown() {
 		srv.lock.Lock()
 		defer srv.lock.Unlock()
 		srv.sortMessagesByLamportClock(srv.messagesReceived)
-		file.WriteMessagesToFile("./sorted_by_lamport_clock.txt", srv.messagesReceived)
+		file.WriteMessagesToFile("./sorted_by_logical_clock.txt", srv.messagesReceived)
 		srv.sortMessagesByTimestamp(srv.messagesReceived)
 		file.WriteMessagesToFile("./sorted_by_timestamp.txt", srv.messagesReceived)
 		os.Exit(0)
@@ -103,8 +103,8 @@ func (srv *Server) sortMessagesByTimestamp(messages []network.Message) {
 func (srv *Server) sortMessagesByLamportClock(messages []network.Message) {
 	sort.Slice(srv.messagesReceived,
 		func(i, j int) bool {
-			return (srv.messagesReceived[i].LamportClock < srv.messagesReceived[j].LamportClock ||
-				(srv.messagesReceived[i].LamportClock == srv.messagesReceived[j].LamportClock &&
+			return (srv.messagesReceived[i].LogicalClock < srv.messagesReceived[j].LogicalClock ||
+				(srv.messagesReceived[i].LogicalClock == srv.messagesReceived[j].LogicalClock &&
 					srv.messagesReceived[i].SenderId < srv.messagesReceived[j].SenderId))
 		})
 }

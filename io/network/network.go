@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -14,11 +13,10 @@ type Connection struct {
 }
 
 type Message struct {
-	Text            string
-	LamportClock    int
-	WallClock       time.Time
-	SenderIpAddress string
-	SenderId        int
+	Text         string
+	WallClock    time.Time
+	SenderId     int
+	LogicalClock int
 }
 
 func CreateConnection(ip string, port string) (Connection, error) {
@@ -54,7 +52,6 @@ func handleNewConnection(conn net.Conn, output chan Message) {
 		log.Printf("Could not decode message: %s", err.Error())
 		return
 	}
-	msg.SenderIpAddress = strings.Split(conn.RemoteAddr().String(), ":")[0]
 
 	output <- msg
 }
