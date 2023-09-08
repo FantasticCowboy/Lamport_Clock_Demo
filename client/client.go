@@ -63,7 +63,6 @@ func (client *Client) StartClient(clientPort string) {
 		for {
 			msg := <-incomingMessages
 			log.Printf("Received message: %+v", msg)
-			client.updateClockValue(msg.LamportClock)
 		}
 	}()
 }
@@ -71,11 +70,9 @@ func (client *Client) StartClient(clientPort string) {
 func (client *Client) SendMessage(text string) {
 	client.connection.SendMessage(
 		&network.Message{
-			Text:            text,
-			LamportClock:    client.getClockValueAndIncrement(),
-			WallClock:       time.Now(),
-			SenderIpAddress: client.ip,
-			SenderId:        client.id,
+			Text:      text,
+			WallClock: time.Now(),
+			SenderId:  client.id,
 		},
 	)
 }
