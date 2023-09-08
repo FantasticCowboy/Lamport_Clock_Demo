@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"lamport_demo/network"
 	"log"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -16,6 +17,11 @@ type Client struct {
 	connection   network.Connection
 	ip           string
 	id           int
+}
+
+func generateRandomNumber() int {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	return rand.New(s1).Int()
 }
 
 func (client *Client) getClockValueAndIncrement() int {
@@ -43,6 +49,7 @@ func CreateClient(serverIp string, serverPort string, clientIP string) (Client, 
 	client.lock = new(sync.Mutex)
 	client.connection = conn
 	client.ip = clientIP
+	client.id = generateRandomNumber()
 	return client, nil
 }
 
@@ -55,6 +62,7 @@ func (client *Client) StartClient(clientPort string) {
 		}
 		for {
 			msg := <-incomingMessages
+			log.Printf("Received message: %+v", msg)
 			client.updateClockValue(msg.LamportClock)
 		}
 	}()
@@ -63,10 +71,11 @@ func (client *Client) StartClient(clientPort string) {
 func (client *Client) SendMessage(text string) {
 	client.connection.SendMessage(
 		&network.Message{
-			Msg:             text,
+			Text:            text,
 			LamportClock:    client.getClockValueAndIncrement(),
 			WallClock:       time.Now(),
 			SenderIpAddress: client.ip,
+			SenderId:        client.id,
 		},
 	)
 }
@@ -74,7 +83,7 @@ func (client *Client) SendMessage(text string) {
 func (client *Client) SendFromStdIn() {
 	for {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter message to send: ")
+		fmt.Print("Enter message to send: \n")
 		text, _ := reader.ReadString('\n')
 		client.SendMessage(text)
 	}

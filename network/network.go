@@ -3,7 +3,6 @@ package network
 import (
 	"encoding/gob"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"strings"
@@ -15,7 +14,7 @@ type Connection struct {
 }
 
 type Message struct {
-	Msg             string
+	Text            string
 	LamportClock    int
 	WallClock       time.Time
 	SenderIpAddress string
@@ -29,7 +28,7 @@ func CreateConnection(ip string, port string) (Connection, error) {
 }
 
 func (connection *Connection) SendMessage(message *Message) error {
-	log.Printf("Starting Send Message: %v to %v", message, connection.address)
+	log.Printf("Sending Message: %+v", message)
 	conn, err := net.Dial("tcp", connection.address)
 	if err != nil {
 		log.Printf("Could not setup connection correctly: %s", err.Error())
@@ -41,37 +40,12 @@ func (connection *Connection) SendMessage(message *Message) error {
 		log.Printf("Could not encode correctly: %s", err.Error())
 		return err
 	}
-	log.Printf("Ending Send Message: %v", message)
+	log.Printf("Message sent!")
 
 	return nil
 }
 
-func readBytesFromConnection(conn net.Conn) []byte {
-	defer conn.Close()
-	bytesReceived := make([]byte, 0)
-	for {
-		packet := make([]byte, 1024)
-		_, err := conn.Read(packet)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			log.Printf("Error reading bytes from connection %s", err.Error())
-			return nil
-		}
-		bytesReceived = append(bytesReceived, packet...)
-	}
-	return bytesReceived
-}
-
 func handleNewConnection(conn net.Conn, output chan Message) {
-	//bytesReceived := readBytesFromConnection(conn)
-	//if bytesReceived == nil {
-	//	return
-	//}
-	//if len(bytesReceived) == 0 {
-	//	log.Printf("Received no bytes")
-	//	return
-	//}
 
 	msg := Message{}
 	err := gob.NewDecoder(conn).Decode(&msg)
@@ -98,7 +72,6 @@ func StartListening(ip string, port string) (chan Message, error) {
 				log.Printf("Error: %v", err)
 				continue
 			}
-			log.Printf("Received new connection!")
 			go handleNewConnection(conn, newMessages)
 		}
 	}()

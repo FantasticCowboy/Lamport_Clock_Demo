@@ -40,7 +40,7 @@ func (srv *Server) PingClient(ip string, clock int) {
 		return
 	}
 	msg := network.Message{
-		Msg:             "",
+		Text:            "",
 		LamportClock:    clock,
 		WallClock:       time.Now(),
 		SenderIpAddress: "",
@@ -79,9 +79,9 @@ func CreateNewServer(ip string) (*Server, error) {
 			log.Fatalf("Couldn't open file!")
 		}
 
-		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message"))
+		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message\n"))
 		for _, val := range srv.messagesReceived {
-			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Msg))
+			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Text))
 		}
 		f.Close()
 
@@ -94,9 +94,9 @@ func CreateNewServer(ip string) (*Server, error) {
 		if err != nil {
 			log.Fatalf("Couldn't open file!")
 		}
-		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message"))
+		f.WriteString(fmt.Sprintf("Sender Id, wall clock, lamport clock, message\n"))
 		for _, val := range srv.messagesReceived {
-			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Msg))
+			f.WriteString(fmt.Sprintf("%d,%v,%v,%s", val.SenderId, val.WallClock, val.LamportClock, val.Text))
 		}
 		f.Close()
 		os.Exit(0)
@@ -110,7 +110,7 @@ func (srv *Server) ProcessMessages() {
 	for {
 		message := <-srv.incomingMessages
 		srv.updateMaxClockValueSeen(message.LamportClock)
-		log.Printf("Received message: %v", message)
+		log.Printf("Received message: %+v", message)
 		go srv.PingClient(message.SenderIpAddress, srv.getMaxClockValueSeen())
 		srv.lock.Lock()
 		srv.messagesReceived = append(srv.messagesReceived, message)

@@ -11,10 +11,10 @@ func TestBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf("Did not establish a connection to the server successfully : %d", err)
 	}
-	connection.SendMessage(&Message{Msg: "hello!"})
+	connection.SendMessage(&Message{Text: "hello!"})
 	msg := <-newMessages
 
-	if msg.Msg != "Hello!" {
+	if msg.Text != "Hello!" {
 		t.Error("message received does not equal Hello")
 	}
 }
