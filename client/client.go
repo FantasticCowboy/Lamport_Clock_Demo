@@ -3,7 +3,7 @@ package client
 import (
 	"bufio"
 	"fmt"
-	"lamport_demo/network"
+	"lamport_demo/io/network"
 	"log"
 	"math/rand"
 	"os"

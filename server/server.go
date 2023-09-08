@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"lamport_demo/constants"
-	"lamport_demo/network"
+	"lamport_demo/io/network"
 	"log"
 	"os"
 	"os/signal"
@@ -74,6 +74,8 @@ func CreateNewServer(ip string) (*Server, error) {
 					(srv.messagesReceived[i].LamportClock == srv.messagesReceived[j].LamportClock &&
 						srv.messagesReceived[i].SenderId < srv.messagesReceived[j].SenderId))
 			})
+
+		file.WriteMessagesToFile()
 		f, err := os.Create("./sorted_by_lamport_clock.txt")
 		if err != nil {
 			log.Fatalf("Couldn't open file!")
